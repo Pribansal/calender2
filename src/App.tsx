@@ -1,432 +1,557 @@
-import { useState, useEffect } from 'react';
-import eventImage1 from './assets/WhatsApp Image 2025-09-15 at 13.33.45.jpeg';
-import mainVideo from './assets/MAIN_VIDEO.mp4';
+import { useState, useMemo, useEffect } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Mic, Tag, Link, Info } from 'lucide-react';
+
+// --- Placeholder Constants ---
+// Placeholder for the event poster image
+const PLACEHOLDER_POSTER_URL = "https://placehold.co/400x300/1e3a8a/ffffff?text=Event+Poster";
+// Placeholder for the main header image (replacing the inaccessible video)
+const PLACEHOLDER_BANNER_URL = "https://placehold.co/1200x400/0c4a6e/e0f2f1?text=BITS+Pilani+Department+Calendar";
 
 interface Event {
   id: number;
   title: string;
-  date: string; // Human-readable date(s)
-  time: string; // Human-readable time
+  date: string;
+  time: string;
   venue: string;
   speaker?: string;
-  posterUrl: string; // Placeholder or actual URL
+  description: string;
+  posterUrl: string;
   category: string;
-  startDateTime: string; // YYYY-MM-DDT... (or just YYYY-MM-DD)
-  endDateTime: string; // YYYY-MM-DDT... (or just YYYY-MM-DD, exclusive end date for multi-day)
+  startDateTime: string; // ISO 8601 string for calendar
+  endDateTime: string;   // ISO 8601 string for calendar
 }
 
+// Function to generate the Google Calendar URL for adding an event
+const generateGoogleCalendarUrl = (event: Event): string => {
+  const startDate = new Date(event.startDateTime);
+  const endDate = new Date(event.endDateTime);
+
+  // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ)
+  const formatDate = (d: Date) => {
+    // Note: Google Calendar expects the format without Z if it's local time,
+    // but using UTC/Z is safer if the user's timezone is known.
+    // For simplicity, we'll use a slightly simplified format without Z and let Google handle the local conversion.
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  };
+
+  const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
+  const title = encodeURIComponent(event.title);
+  const details = encodeURIComponent(event.description);
+  const location = encodeURIComponent(event.venue);
+
+  return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+};
+
+// Data extracted and structured from the provided CSV file
+const INITIAL_EVENTS: Event[] = [
+  {
+    id: 1,
+    title: "Bridging the AI Gap: From Tools to Implementation",
+    date: "16th September 2025",
+    time: "6:00 PM to 7:00 PM",
+    venue: "Virtual Webinar",
+    speaker: "Mr. Ramesh Pattnaik, VP Sales & BD, PMI Pune Chapter",
+    description: "A deep dive into transitioning from theoretical AI tools to practical, real-world implementation.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Webinar",
+    startDateTime: "2025-09-16T18:00:00",
+    endDateTime: "2025-09-16T19:00:00",
+  },
+  {
+    id: 2,
+    title: "Resume Building Workshop",
+    date: "24th August 2025",
+    time: "3:00 PM to 4:00 PM",
+    venue: "Virtual",
+    speaker: "Arjun Bhatnagar & Sudhanshu Ranjan",
+    description: "Learn essential tips and tricks to craft a winning resume that stands out to recruiters.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Workshop",
+    startDateTime: "2025-08-24T15:00:00",
+    endDateTime: "2025-08-24T16:00:00",
+  },
+  {
+    id: 3,
+    title: "Data Dialouges Unplugged Chap 1",
+    date: "28th August 2025",
+    time: "5:00 PM to 7:00 PM",
+    venue: "Virtual",
+    speaker: "Kireeti Kesavamurthy",
+    description: "Chapter 1 of a series exploring real-world data challenges and solutions in an informal setting.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Talk",
+    startDateTime: "2025-08-28T17:00:00",
+    endDateTime: "2025-08-28T19:00:00",
+  },
+  {
+    id: 4,
+    title: "BOSM 2025",
+    date: "17th September to 21st September 2025",
+    time: "All Day",
+    venue: "BITS Pilani Campus",
+    speaker: undefined,
+    description: "The annual sports festival of BITS Pilani, featuring various indoor and outdoor sports competitions.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Festival",
+    startDateTime: "2025-09-17T00:00:00", // Start of the first day
+    endDateTime: "2025-09-21T23:59:59", // End of the last day
+  },
+  {
+    id: 5,
+    title: "Mind, Market & Ministries",
+    date: "27th September 2025",
+    time: "11:30 AM to 1:30 PM",
+    venue: "NAB 6163",
+    speaker: "Kunal Rahar",
+    description: "An insightful session discussing the intersection of human psychology, economic trends, and governance.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Seminar",
+    startDateTime: "2025-09-27T11:30:00",
+    endDateTime: "2025-09-27T13:30:00",
+  },
+  {
+    id: 6,
+    title: "Study Circle (Product Management)",
+    date: "12th October 2025",
+    time: "5:00 PM to 7:00 PM",
+    venue: "Virtual",
+    speaker: "Students",
+    description: "A collaborative study session focused on key concepts and case studies in Product Management.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Study Group",
+    startDateTime: "2025-10-12T17:00:00",
+    endDateTime: "2025-10-12T19:00:00",
+  },
+  // Main Festival Event (Interface)
+  {
+    id: 7,
+    title: "Interface - Annual Tech Fest",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: undefined,
+    description: "The department's premier annual technical festival.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Festival",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  // Sub-events under Interface Fest (31st October - 2nd November)
+  {
+    id: 8,
+    title: "Inkspire",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Alumini Relations Club",
+    description: "A club event hosted by the Alumini Relations Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 9,
+    title: "Enigmatic Enclave",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Media Relations Club",
+    description: "A club event hosted by the Media Relations Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 10,
+    title: "Stock Storm Exchange",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Finance Club",
+    description: "A club event hosted by the Finance Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 11,
+    title: "HR Imperium",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "HR & Sponsorship Club",
+    description: "A club event hosted by the HR & Sponsorship Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 12,
+    title: "Cash or Clash",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Industry Linkage Club",
+    description: "A club event hosted by the Industry Linkage Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 13,
+    title: "InnoMun",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Marketing Club",
+    description: "A club event hosted by the Marketing Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 14,
+    title: "Moneyball",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: "Operations Club",
+    description: "A club event hosted by the Operations Club during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+  {
+    id: 15,
+    title: "The Product Paradox",
+    date: "31st October to 2nd November 2025",
+    time: "All Day",
+    venue: "TBD",
+    speaker: undefined,
+    description: "A club event focused on Product Management challenges during the Interface Tech Fest.",
+    posterUrl: PLACEHOLDER_POSTER_URL,
+    category: "Club Event",
+    startDateTime: "2025-10-31T00:00:00",
+    endDateTime: "2025-11-02T23:59:59",
+  },
+];
+
+
+const getDaysInMonth = (month: number, year: number): number => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+const getFirstDayOfMonth = (month: number, year: number): number => {
+  return new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday...
+};
+
+// Helper function to format the selected date for comparison
+const formatDateKey = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
 function App() {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  const today = new Date();
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = useMemo(() => new Date(), []);
+
   const [calendarMonthIdx, setCalendarMonthIdx] = useState(today.getMonth());
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
-  // Initialize selectedDate to today
-  const [selectedDate, setSelectedDate] = useState(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-  // --- UPDATED AND FIXED EVENTS LIST ---
-  const events: Event[] = [
-    // 1. Resume Building Workshop (Single Day)
-    {
-      id: 1,
-      title: "Resume Building Workshop",
-      date: "August 24, 2025",
-      time: "3:00 PM to 4:00 PM",
-      venue: "Virtual",
-      speaker: "Arjun Bhatnagar & Sudhanshu Ranjan",
-      posterUrl: "placeholder_R",
-      category: "Workshop",
-      startDateTime: "2025-08-24T15:00:00",
-      endDateTime: "2025-08-24T16:00:00",
-    },
-    // 2. Data Dialouges Unplugged Chap 1 (Single Day)
-    {
-      id: 2,
-      title: "Data Dialouges Unplugged Chap 1",
-      date: "August 28, 2025",
-      time: "5:00 PM to 7:00 PM",
-      venue: "Virtual",
-      speaker: "Kireeti Kesavamurthy",
-      posterUrl: "placeholder_D",
-      category: "Speaker Session",
-      startDateTime: "2025-08-28T17:00:00",
-      endDateTime: "2025-08-28T19:00:00",
-    },
-    // 3. BOSM 2025 (Multi-Day: Sept 17 - Sept 21)
-    {
-      id: 3,
-      title: "BOSM 2025",
-      date: "September 17 - 21, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: undefined,
-      posterUrl: "placeholder_B",
-      category: "Festival",
-      startDateTime: "2025-09-17", // Inclusive start date
-      endDateTime: "2025-09-22",   // Exclusive end date
-    },
-    // 4. Mind, Market & Ministries (Single Day)
-    {
-      id: 4,
-      title: "Mind, Market & Ministries",
-      date: "September 27, 2025",
-      time: "11:30 AM to 1:30 PM",
-      venue: "NAB 6163",
-      speaker: "Kunal Rahar",
-      posterUrl: "placeholder_M",
-      category: "Seminar",
-      startDateTime: "2025-09-27T11:30:00",
-      endDateTime: "2025-09-27T13:30:00",
-    },
-    // 5. Study Circle (Product Management) (Single Day)
-    {
-      id: 5,
-      title: "Study Circle (Product Management)",
-      date: "October 12, 2025",
-      time: "5:00 PM to 7:00 PM",
-      venue: "Virtual",
-      speaker: "Students",
-      posterUrl: "placeholder_S",
-      category: "Study Circle",
-      startDateTime: "2025-10-12T17:00:00",
-      endDateTime: "2025-10-12T19:00:00",
-    },
+  // Derived state for the calendar view
+  const currentMonthDays = useMemo(() => getDaysInMonth(calendarMonthIdx, calendarYear), [calendarMonthIdx, calendarYear]);
+  const firstDay = useMemo(() => getFirstDayOfMonth(calendarMonthIdx, calendarYear), [calendarMonthIdx, calendarYear]);
+  const formattedSelectedDateKey = useMemo(() => formatDateKey(selectedDate), [selectedDate]);
 
-    // Multi-Day Events (Oct 31 - Nov 2)
-    // 6. Interface
-    {
-      id: 6,
-      title: "Interface",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: undefined,
-      posterUrl: "placeholder_I",
-      category: "Festival",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03", // Exclusive end date
-    },
-    // 7. Inkspire
-    {
-      id: 7,
-      title: "Inkspire",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Alumini Relations Club",
-      posterUrl: "placeholder_In",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 8. Enigmatic Enclave
-    {
-      id: 8,
-      title: "Enigmatic Enclave",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Media Relations Club",
-      posterUrl: "placeholder_E",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 9. Stock Storm Exchange
-    {
-      id: 9,
-      title: "Stock Storm Exchange",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Finance Club",
-      posterUrl: "placeholder_St",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 10. HR Imperium
-    {
-      id: 10,
-      title: "HR Imperium",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "HR & Sponsorship Club",
-      posterUrl: "placeholder_H",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 11. Cash or Clash
-    {
-      id: 11,
-      title: "Cash or Clash",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Industry Linkage Club",
-      posterUrl: "placeholder_C",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 12. InnoMun
-    {
-      id: 12,
-      title: "InnoMun",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Marketing Club",
-      posterUrl: "placeholder_InM",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 13. Moneyball
-    {
-      id: 13,
-      title: "Moneyball",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Operations Club",
-      posterUrl: "placeholder_M",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 14. The Product Paradox
-    {
-      id: 14,
-      title: "The Product Paradox",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "Product Management Club",
-      posterUrl: "placeholder_P",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-    // 15. Innovision
-    {
-      id: 15,
-      title: "Innovision",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "E-Cell",
-      posterUrl: "placeholder_Inv",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
-  ];
+  // Map events by date for quick lookup in the calendar grid
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, Event[]>();
+    INITIAL_EVENTS.forEach(event => {
+      const startKey = formatDateKey(new Date(event.startDateTime));
+      const endKey = formatDateKey(new Date(event.endDateTime));
 
-  // Helper function to robustly check if a date falls within an event's range
-  const isDateInRange = (event: Event, targetDate: Date) => {
-    // Standardize target date to YYYY-MM-DD for comparison
-    const targetDateString = targetDate.toISOString().split('T')[0];
+      const currentDate = new Date(startKey);
+      const endDate = new Date(endKey);
 
-    // Get event start and exclusive end date (YYYY-MM-DD)
-    const startDateString = event.startDateTime.split('T')[0];
-    const endDateString = event.endDateTime.split('T')[0];
-
-    // Check if target date is >= start date AND < end date (exclusive end date logic)
-    return targetDateString >= startDateString && targetDateString < endDateString;
-  };
-
-  // Helper function to get events for a specific Date object
-  const getEventsForDate = (date: Date): Event[] => {
-    return events.filter(ev => isDateInRange(ev, date));
-  };
-
-
-  // Effect to automatically select the first event when the selectedDate changes,
-  // or clear the selection if no events exist.
-  useEffect(() => {
-    const eventsForSelected = getEventsForDate(selectedDate);
-    if (eventsForSelected.length > 0) {
-        // Only update if the currently selected event is NOT in the new list or is null
-        if (!eventsForSelected.some(ev => ev.id === selectedEventId)) {
-            setSelectedEventId(eventsForSelected[0].id);
+      // Add event for every day it spans
+      while (currentDate <= endDate) {
+        const key = formatDateKey(currentDate);
+        if (!map.has(key)) {
+          map.set(key, []);
         }
-    } else {
-        setSelectedEventId(null);
+        map.get(key)!.push(event);
+
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+    return map;
+  }, []);
+
+  // Filter events for the currently selected date
+  const eventsForSelectedDate = useMemo(() => {
+    return eventsByDate.get(formattedSelectedDateKey) || [];
+  }, [eventsByDate, formattedSelectedDateKey]);
+
+
+  useEffect(() => {
+    if (eventsForSelectedDate.length > 0 && selectedEventId === null) {
+      setSelectedEventId(eventsForSelectedDate[0].id);
+    } else if (eventsForSelectedDate.length === 0) {
+      setSelectedEventId(null);
     }
-  }, [selectedDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventsForSelectedDate]);
 
-  function getDaysInMonth(year: number, month: number) {
-    return new Date(year, month + 1, 0).getDate();
-  }
-  function getFirstDayOfMonth(year: number, month: number) {
-    return new Date(year, month, 1).getDay();
-  }
-  const daysInMonth = getDaysInMonth(calendarYear, calendarMonthIdx);
-  const firstDay = getFirstDayOfMonth(calendarYear, calendarMonthIdx);
-  const calendarDays: Array<Date | null> = [];
-  for (let i = 0; i < firstDay; i++) calendarDays.push(null);
-  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(new Date(calendarYear, calendarMonthIdx, d));
 
-  function generateGoogleCalendarUrl(event: Event) {
-    // Format date-time strings to Google Calendar format (YYYYMMDDTHHMMSSZ or YYYYMMDD)
-    const formatForCalendar = (dt: string) => dt.replace(/[-:]/g, '').replace(/\..*$/, '');
-    
-    const start = formatForCalendar(event.startDateTime);
-    const end = formatForCalendar(event.endDateTime);
-    
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.speaker || '')}&location=${encodeURIComponent(event.venue)}&sf=true&output=xml`;
-  }
+  // Calendar navigation handlers
+  const handlePrevMonth = () => {
+    setCalendarMonthIdx(prev => {
+      if (prev === 0) {
+        setCalendarYear(y => y - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
+    setSelectedDate(new Date(calendarYear, calendarMonthIdx - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonthIdx(prev => {
+      if (prev === 11) {
+        setCalendarYear(y => y + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
+    setSelectedDate(new Date(calendarYear, calendarMonthIdx + 1, 1));
+  };
+
+  // Date cell renderer
+  const renderDateCell = (dateNum: number) => {
+    const dayDate = new Date(calendarYear, calendarMonthIdx, dateNum);
+    const dateKey = formatDateKey(dayDate);
+    const isEventDay = eventsByDate.has(dateKey);
+    const isSelected = dateKey === formattedSelectedDateKey;
+    const isToday = dateKey === formatDateKey(today);
+
+    let baseClasses = "flex flex-col items-center justify-center p-1 md:p-2 aspect-square rounded-lg cursor-pointer transition-all duration-150 relative";
+    let eventIndicator = null;
+
+    if (isEventDay) {
+      baseClasses += " bg-blue-50 hover:bg-blue-100 text-blue-900 font-semibold";
+      eventIndicator = <span className="absolute bottom-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>;
+    } else {
+      baseClasses += " text-gray-700 hover:bg-gray-100";
+    }
+
+    if (isToday) {
+      baseClasses += " border-2 border-green-500";
+    }
+
+    if (isSelected) {
+      baseClasses = baseClasses.replace('bg-blue-50', 'bg-blue-900').replace('hover:bg-blue-100', 'hover:bg-blue-900');
+      baseClasses += " bg-blue-900 text-white shadow-lg transform scale-105";
+    }
+
+    return (
+      <div
+        key={dateNum}
+        className={baseClasses}
+        onClick={() => setSelectedDate(dayDate)}
+      >
+        <span className="text-lg md:text-xl">{dateNum}</span>
+        {eventIndicator}
+      </div>
+    );
+  };
+
+  // Function to create the calendar grid
+  const renderCalendarGrid = () => {
+    const calendarCells: JSX.Element[] = [];
+
+    // Add empty cells for preceding days of the week
+    for (let i = 0; i < firstDay; i++) {
+      calendarCells.push(<div key={`empty-${i}`} className="p-2 aspect-square"></div>);
+    }
+
+    // Add day cells
+    for (let day = 1; day <= currentMonthDays; day++) {
+      calendarCells.push(renderDateCell(day));
+    }
+
+    return calendarCells;
+  };
+
+  const currentEvent = INITIAL_EVENTS.find(e => e.id === selectedEventId);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-900 to-blue-800 text-white overflow-hidden">
-        <video
-          src={mainVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          disablePictureInPicture
-          className="w-full h-[60vh] object-cover"
-        />
-      </div>
-      <div className="w-full flex flex-col items-center justify-center py-8">
-        <h1 className="text-4xl font-bold mb-2 text-gray-900 tracking-tight">Department of Management</h1>
-        <h2 className="text-xl font-medium mb-2 text-blue-900">Academic Calendar</h2>
-        <p className="text-base text-gray-700 max-w-2xl text-center">
-          Stay updated with upcoming events, workshops, and seminars from the Department of Management.
-        </p>
-      </div>
-      {/* Minimal Calendar and Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row gap-12">
-        {/* Calendar Section (left) */}
-        <div className="w-full lg:max-w-md">
-          <div className="flex items-center justify-between mb-2">
-            <button
-              className="px-2 py-1 text-sm text-blue-900 hover:bg-blue-100 rounded"
-              onClick={() => {
-                const newMonthIdx = calendarMonthIdx === 0 ? 11 : calendarMonthIdx - 1;
-                const newYear = calendarMonthIdx === 0 ? calendarYear - 1 : calendarYear;
-                setCalendarMonthIdx(newMonthIdx);
-                setCalendarYear(newYear);
-                // Reset selected date to the 1st of the new month to avoid day overflow issues
-                setSelectedDate(new Date(newYear, newMonthIdx, 1));
-              }}
-            >&lt;</button>
-            <span className="font-semibold text-lg text-gray-900">{months[calendarMonthIdx]} {calendarYear}</span>
-            <button
-              className="px-2 py-1 text-sm text-blue-900 hover:bg-blue-100 rounded"
-              onClick={() => {
-                const newMonthIdx = calendarMonthIdx === 11 ? 0 : calendarMonthIdx + 1;
-                const newYear = calendarMonthIdx === 11 ? calendarYear + 1 : calendarYear;
-                setCalendarMonthIdx(newMonthIdx);
-                setCalendarYear(newYear);
-                // Reset selected date to the 1st of the new month to avoid day overflow issues
-                setSelectedDate(new Date(newYear, newMonthIdx, 1));
-              }}
-            >&gt;</button>
-          </div>
-          <div className="grid grid-cols-7 gap-2 bg-white rounded-lg shadow p-4">
-            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(day => (
-              <div key={day} className="text-xs font-semibold text-gray-500 text-center mb-2">{day}</div>
-            ))}
-            {calendarDays.map((date, idx) => {
-              if (!date) return <div key={idx}></div>;
-              
-              const eventsForDate = getEventsForDate(date);
-              const isEvent = eventsForDate.length > 0;
-              const isSelected = date.toDateString() === selectedDate.toDateString();
-              
-              return (
-                <button
-                  key={idx}
-                  className={`h-16 w-full rounded-lg border flex flex-col items-start justify-start p-1 text-sm font-medium transition
-                    ${isEvent ? "bg-blue-100 border-blue-400 text-blue-900 hover:bg-blue-200" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"}
-                    ${isSelected ? "!bg-blue-900 !text-white !border-blue-900 ring-2 ring-offset-1 ring-blue-500" : ""}`}
-                  onClick={() => setSelectedDate(date)}
-                >
-                  <span className={`font-bold ${isSelected ? 'text-white' : ''}`}>{date.getDate()}</span>
-                  {isEvent && (
-                    <span className="flex gap-1 mt-2">
-                      {eventsForDate.slice(0,3).map(ev => (
-                        <span key={ev.id} className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-900'}`}></span>
-                      ))}
-                      {eventsForDate.length > 3 && (
-                        <span className={`text-[10px] ${isSelected ? 'text-white' : 'text-blue-900'} ml-1`}>+{eventsForDate.length - 3}</span>
-                      )}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      {/* Header */}
+      <header className="bg-blue-900 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            Department Calendar
+          </h1>
+          <div className="flex items-center space-x-2 text-white text-sm">
+            <Calendar className="h-5 w-5" />
+            <span>BITS Pilani</span>
           </div>
         </div>
-        {/* Events for selected date (right) */}
-        <div className="w-full flex-1">
-          <h3 className="text-xl font-semibold mb-4 text-blue-900">
-            Events on {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </h3>
-          <div className="space-y-3">
-            {(() => {
-              const eventsForSelected = getEventsForDate(selectedDate);
-              
-              if (eventsForSelected.length === 0) {
-                return <div className="text-gray-500">No events for this date.</div>;
-              }
-              
-              // Find the event to display, preferring the selected ID, otherwise the first event
-              const eventToDisplay = eventsForSelected.find(ev => ev.id === selectedEventId) || eventsForSelected[0];
+      </header>
 
-              return (
-                <>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {eventsForSelected.map(ev => (
-                      <button
-                        key={ev.id}
-                        className={`px-3 py-1 rounded-full border text-sm font-medium transition-colors
-                          ${eventToDisplay.id === ev.id ? "bg-blue-900 text-white border-blue-900" : "bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100"}`}
-                        onClick={() => setSelectedEventId(ev.id)}
+      {/* Hero Banner (Placeholder for Video) */}
+      <div className="relative h-64 md:h-96 w-full overflow-hidden mb-12">
+        <img
+          src={PLACEHOLDER_BANNER_URL}
+          alt="Department Banner Placeholder"
+          className="w-full h-full object-cover object-center"
+          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+            (e.target as HTMLImageElement).onerror = null;
+            (e.target as HTMLImageElement).src = "https://placehold.co/1200x400/1e3a8a/ffffff?text=Image+Unavailable";
+          }}
+        />
+        <div className="absolute inset-0 bg-blue-900 bg-opacity-60 flex items-center justify-center">
+          <h2 className="text-4xl md:text-6xl font-bold text-white text-center p-4">
+            Upcoming Events, Workshops, and Seminars
+          </h2>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-grow">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Calendar View (Column 1) */}
+          <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-xl shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <button
+                onClick={handlePrevMonth}
+                className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-900 transition-colors"
+                aria-label="Previous Month"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <h3 className="text-3xl font-extrabold text-blue-900">
+                {months[calendarMonthIdx]} {calendarYear}
+              </h3>
+              <button
+                onClick={handleNextMonth}
+                className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-900 transition-colors"
+                aria-label="Next Month"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {weekdays.map(day => (
+                <div key={day} className="text-sm font-bold text-gray-500 uppercase py-2">
+                  {day}
+                </div>
+              ))}
+              {renderCalendarGrid()}
+            </div>
+          </div>
+
+          {/* Event Details and List (Column 2) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-4">
+              {/* Event List for Selected Date */}
+              <div className="bg-white p-6 rounded-xl shadow-2xl mb-8">
+                <h4 className="text-2xl font-bold text-blue-900 mb-4 flex items-center">
+                  <Calendar className="h-6 w-6 mr-2" />
+                  Events on {selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </h4>
+
+                {eventsForSelectedDate.length === 0 ? (
+                  <p className="text-gray-500 flex items-center">
+                    <Info className="h-5 w-5 mr-2" />
+                    No events scheduled for this date.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {eventsForSelectedDate.map(event => (
+                      <div
+                        key={event.id}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors duration-200 ${selectedEventId === event.id ? 'bg-blue-100 border-l-4 border-blue-900' : 'hover:bg-gray-100'}`}
+                        onClick={() => setSelectedEventId(event.id)}
                       >
-                        {ev.title.length > 18 ? ev.title.slice(0, 15) + "..." : ev.title}
-                      </button>
+                        <p className="font-semibold text-blue-800">{event.title}</p>
+                        <p className="text-sm text-gray-600 flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {event.time}
+                        </p>
+                      </div>
                     ))}
                   </div>
-                  {/* Event details for selected tab */}
-                  <div className="bg-white rounded-lg shadow p-6 border border-blue-100">
-                        <h4 className="text-2xl font-bold mb-2 text-blue-900">{eventToDisplay.title}</h4>
-                        {/* Using a single placeholder image for all since only one was provided in the original imports */}
-                        <img 
-                            src={eventImage1} 
-                            alt={eventToDisplay.title} 
-                            className="w-full h-48 object-cover rounded mb-4 border border-gray-100" 
-                        />
-                        <div className="mb-2 text-gray-700"><strong>Date:</strong> {eventToDisplay.date}</div>
-                        <div className="mb-2 text-gray-700"><strong>Time:</strong> {eventToDisplay.time}</div>
-                        <div className="mb-2 text-gray-700"><strong>Venue:</strong> {eventToDisplay.venue}</div>
-                        {eventToDisplay.speaker && <div className="mb-2 text-gray-700"><strong>Speaker:</strong> {eventToDisplay.speaker}</div>}
-                        <div className="mb-2 text-gray-700"><strong>Category:</strong> {eventToDisplay.category}</div>
-                        <button
-                          className="mt-4 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center"
-                          onClick={() => window.open(generateGoogleCalendarUrl(eventToDisplay), '_blank')}
-                        >
-                          Add to Calendar
-                        </button>
+                )}
+              </div>
+
+              {/* Detailed Event Information */}
+              {currentEvent && (
+                <div className="bg-white p-6 rounded-xl shadow-2xl border-t-4 border-blue-600">
+                  <h4 className="text-2xl font-bold text-blue-900 mb-4">{currentEvent.title}</h4>
+                  <div className="flex flex-col items-center mb-4">
+                    <img
+                      src={currentEvent.posterUrl}
+                      alt={`${currentEvent.title} poster`}
+                      className="w-full h-auto max-h-64 object-cover rounded-lg shadow-md"
+                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                        (e.target as HTMLImageElement).onerror = null;
+                        (e.target as HTMLImageElement).src = "https://placehold.co/400x300/1e3a8a/ffffff?text=Image+Unavailable";
+                      }}
+                    />
                   </div>
-                </>
-              );
-            })()}
+                  <p className="text-gray-700 mb-4 text-sm leading-relaxed">{currentEvent.description}</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="text-gray-700 flex items-start">
+                      <Calendar className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                      <strong>Date:</strong> {currentEvent.date}
+                    </div>
+                    <div className="text-gray-700 flex items-start">
+                      <Clock className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                      <strong>Time:</strong> {currentEvent.time}
+                    </div>
+                    <div className="text-gray-700 flex items-start">
+                      <MapPin className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                      <strong>Venue:</strong> {currentEvent.venue}
+                    </div>
+                    {currentEvent.speaker && (
+                      <div className="text-gray-700 flex items-start">
+                        <Mic className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                        <strong>Speaker:</strong> {currentEvent.speaker}
+                      </div>
+                    )}
+                    <div className="text-gray-700 flex items-start">
+                      <Tag className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                      <strong>Category:</strong> {currentEvent.category}
+                    </div>
+                  </div>
+                  <button
+                    className="mt-6 w-full bg-blue-900 hover:bg-blue-800 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+                    onClick={() => window.open(generateGoogleCalendarUrl(currentEvent), '_blank')}
+                  >
+                    <Link className="h-4 w-4 mr-2" />
+                    Add to Calendar
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
       {/* Footer */}
-      <footer className="bg-blue-900 text-white mt-16">
+      <footer className="bg-blue-900 text-white mt-16 shadow-inner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <p className="text-sm opacity-75">
