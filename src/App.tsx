@@ -1,18 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import eventImage1 from './assets/WhatsApp Image 2025-09-15 at 13.33.45.jpeg';
 import mainVideo from './assets/MAIN_VIDEO.mp4';
 
 interface Event {
   id: number;
   title: string;
-  date: string;
-  time: string;
+  date: string; // Human-readable date(s)
+  time: string; // Human-readable time
   venue: string;
   speaker?: string;
-  posterUrl: string;
+  posterUrl: string; // Placeholder or actual URL
   category: string;
-  startDateTime: string;
-  endDateTime: string;
+  startDateTime: string; // YYYY-MM-DDT... (or just YYYY-MM-DD)
+  endDateTime: string; // YYYY-MM-DDT... (or just YYYY-MM-DD, exclusive end date for multi-day)
 }
 
 function App() {
@@ -23,195 +23,243 @@ function App() {
   const today = new Date();
   const [calendarMonthIdx, setCalendarMonthIdx] = useState(today.getMonth());
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
-  const [selectedDate, setSelectedDate] = useState(new Date(calendarYear, calendarMonthIdx, today.getDate()));
+  // Initialize selectedDate to today
+  const [selectedDate, setSelectedDate] = useState(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
+  // --- UPDATED AND FIXED EVENTS LIST ---
   const events: Event[] = [
-{
-    id: 1,
-    title: "Resume Building Workshop",
-    date: "August 24, 2025",
-    time: "3:00 PM to 4:00 PM",
-    venue: "Virtual",
-    speaker: "Arjun Bhatnagar & Sudhanshu Ranjan",
-    posterUrl: "placeholder_R",
-    category: "Workshop",
-    startDateTime: "2025-08-24T15:00:00",
-    endDateTime: "2025-08-24T16:00:00",
-  },
-  {
-    id: 2,
-    title: "Data Dialouges Unplugged Chap 1",
-    date: "August 28, 2025",
-    time: "5:00 PM to 7:00 PM",
-    venue: "Virtual",
-    speaker: "Kireeti Kesavamurthy",
-    posterUrl: "placeholder_D",
-    category: "Speaker Session",
-    startDateTime: "2025-08-28T17:00:00",
-    endDateTime: "2025-08-28T19:00:00",
-  },
-  {
-    id: 3,
-    title: "Mind, Market & Ministries",
-    date: "September 27, 2025",
-    time: "11:30 AM to 1:30 PM",
-    venue: "NAB 6163",
-    speaker: "Kunal Rahar",
-    posterUrl: "placeholder_M",
-    category: "Seminar",
-    startDateTime: "2025-09-27T11:30:00",
-    endDateTime: "2025-09-27T13:30:00",
-  },
-  {
-    id: 4,
-    title: "Study Circle (Product Management)",
-    date: "October 12, 2025",
-    time: "5:00 PM to 7:00 PM",
-    venue: "Virtual",
-    speaker: "Students",
-    posterUrl: "placeholder_S",
-    category: "Study Circle",
-    startDateTime: "2025-10-12T17:00:00",
-    endDateTime: "2025-10-12T19:00:00",
-  },
-  
-  // Multi-Day Events (BOSM 2025: Sept 17 - Sept 21)
-  {
-    id: 5,
-    title: "BOSM 2025",
-    date: "September 17 - 21, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: undefined,
-    posterUrl: "placeholder_B",
-    category: "Festival",
-    startDateTime: "2025-09-17", // Date only format
-    endDateTime: "2025-09-22",   // Exclusive end date
-  },
+    // 1. Resume Building Workshop (Single Day)
+    {
+      id: 1,
+      title: "Resume Building Workshop",
+      date: "August 24, 2025",
+      time: "3:00 PM to 4:00 PM",
+      venue: "Virtual",
+      speaker: "Arjun Bhatnagar & Sudhanshu Ranjan",
+      posterUrl: "placeholder_R",
+      category: "Workshop",
+      startDateTime: "2025-08-24T15:00:00",
+      endDateTime: "2025-08-24T16:00:00",
+    },
+    // 2. Data Dialouges Unplugged Chap 1 (Single Day)
+    {
+      id: 2,
+      title: "Data Dialouges Unplugged Chap 1",
+      date: "August 28, 2025",
+      time: "5:00 PM to 7:00 PM",
+      venue: "Virtual",
+      speaker: "Kireeti Kesavamurthy",
+      posterUrl: "placeholder_D",
+      category: "Speaker Session",
+      startDateTime: "2025-08-28T17:00:00",
+      endDateTime: "2025-08-28T19:00:00",
+    },
+    // 3. BOSM 2025 (Multi-Day: Sept 17 - Sept 21)
+    {
+      id: 3,
+      title: "BOSM 2025",
+      date: "September 17 - 21, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: undefined,
+      posterUrl: "placeholder_B",
+      category: "Festival",
+      startDateTime: "2025-09-17", // Inclusive start date
+      endDateTime: "2025-09-22",   // Exclusive end date
+    },
+    // 4. Mind, Market & Ministries (Single Day)
+    {
+      id: 4,
+      title: "Mind, Market & Ministries",
+      date: "September 27, 2025",
+      time: "11:30 AM to 1:30 PM",
+      venue: "NAB 6163",
+      speaker: "Kunal Rahar",
+      posterUrl: "placeholder_M",
+      category: "Seminar",
+      startDateTime: "2025-09-27T11:30:00",
+      endDateTime: "2025-09-27T13:30:00",
+    },
+    // 5. Study Circle (Product Management) (Single Day)
+    {
+      id: 5,
+      title: "Study Circle (Product Management)",
+      date: "October 12, 2025",
+      time: "5:00 PM to 7:00 PM",
+      venue: "Virtual",
+      speaker: "Students",
+      posterUrl: "placeholder_S",
+      category: "Study Circle",
+      startDateTime: "2025-10-12T17:00:00",
+      endDateTime: "2025-10-12T19:00:00",
+    },
 
-  // Multi-Day Events (Oct 31 - Nov 2)
-  {
-    id: 6,
-    title: "Interface",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: undefined,
-    posterUrl: "placeholder_I",
-    category: "Festival",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 7,
-    title: "Inkspire",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Alumini Relations Club",
-    posterUrl: "placeholder_In",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 8,
-    title: "Enigmatic Enclave",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Media Relations Club",
-    posterUrl: "placeholder_E",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 9,
-    title: "Stock Storm Exchange",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Finance Club",
-    posterUrl: "placeholder_St",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 10,
-    title: "HR Imperium",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "HR & Sponsorship Club",
-    posterUrl: "placeholder_H",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 11,
-    title: "Cash or Clash",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Industry Linkage Club",
-    posterUrl: "placeholder_C",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 12,
-    title: "InnoMun",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Marketing Club",
-    posterUrl: "placeholder_InM",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 13,
-    title: "Moneyball",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Operations Club",
-    posterUrl: "placeholder_M",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 14,
-    title: "The Product Paradox",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "Product Management Club",
-    posterUrl: "placeholder_P",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-  {
-    id: 15,
-    title: "Innovision",
-    date: "October 31 - November 2, 2025",
-    time: "All Day",
-    venue: "TBD",
-    speaker: "E-Cell",
-    posterUrl: "placeholder_Inv",
-    category: "Competition",
-    startDateTime: "2025-10-31",
-    endDateTime: "2025-11-03",
-  },
-];
+    // Multi-Day Events (Oct 31 - Nov 2)
+    // 6. Interface
+    {
+      id: 6,
+      title: "Interface",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: undefined,
+      posterUrl: "placeholder_I",
+      category: "Festival",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03", // Exclusive end date
+    },
+    // 7. Inkspire
+    {
+      id: 7,
+      title: "Inkspire",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Alumini Relations Club",
+      posterUrl: "placeholder_In",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 8. Enigmatic Enclave
+    {
+      id: 8,
+      title: "Enigmatic Enclave",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Media Relations Club",
+      posterUrl: "placeholder_E",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 9. Stock Storm Exchange
+    {
+      id: 9,
+      title: "Stock Storm Exchange",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Finance Club",
+      posterUrl: "placeholder_St",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 10. HR Imperium
+    {
+      id: 10,
+      title: "HR Imperium",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "HR & Sponsorship Club",
+      posterUrl: "placeholder_H",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 11. Cash or Clash
+    {
+      id: 11,
+      title: "Cash or Clash",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Industry Linkage Club",
+      posterUrl: "placeholder_C",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 12. InnoMun
+    {
+      id: 12,
+      title: "InnoMun",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Marketing Club",
+      posterUrl: "placeholder_InM",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 13. Moneyball
+    {
+      id: 13,
+      title: "Moneyball",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Operations Club",
+      posterUrl: "placeholder_M",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 14. The Product Paradox
+    {
+      id: 14,
+      title: "The Product Paradox",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "Product Management Club",
+      posterUrl: "placeholder_P",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+    // 15. Innovision
+    {
+      id: 15,
+      title: "Innovision",
+      date: "October 31 - November 2, 2025",
+      time: "All Day",
+      venue: "TBD",
+      speaker: "E-Cell",
+      posterUrl: "placeholder_Inv",
+      category: "Competition",
+      startDateTime: "2025-10-31",
+      endDateTime: "2025-11-03",
+    },
+  ];
+
+  // Helper function to robustly check if a date falls within an event's range
+  const isDateInRange = (event: Event, targetDate: Date) => {
+    // Standardize target date to YYYY-MM-DD for comparison
+    const targetDateString = targetDate.toISOString().split('T')[0];
+
+    // Get event start and exclusive end date (YYYY-MM-DD)
+    const startDateString = event.startDateTime.split('T')[0];
+    const endDateString = event.endDateTime.split('T')[0];
+
+    // Check if target date is >= start date AND < end date (exclusive end date logic)
+    return targetDateString >= startDateString && targetDateString < endDateString;
+  };
+
+  // Helper function to get events for a specific Date object
+  const getEventsForDate = (date: Date): Event[] => {
+    return events.filter(ev => isDateInRange(ev, date));
+  };
+
+
+  // Effect to automatically select the first event when the selectedDate changes,
+  // or clear the selection if no events exist.
+  useEffect(() => {
+    const eventsForSelected = getEventsForDate(selectedDate);
+    if (eventsForSelected.length > 0) {
+        // Only update if the currently selected event is NOT in the new list or is null
+        if (!eventsForSelected.some(ev => ev.id === selectedEventId)) {
+            setSelectedEventId(eventsForSelected[0].id);
+        }
+    } else {
+        setSelectedEventId(null);
+    }
+  }, [selectedDate]);
 
   function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
@@ -226,7 +274,13 @@ function App() {
   for (let d = 1; d <= daysInMonth; d++) calendarDays.push(new Date(calendarYear, calendarMonthIdx, d));
 
   function generateGoogleCalendarUrl(event: Event) {
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${event.startDateTime}/${event.endDateTime}&details=${encodeURIComponent(event.speaker || '')}&location=${encodeURIComponent(event.venue)}&sf=true&output=xml`;
+    // Format date-time strings to Google Calendar format (YYYYMMDDTHHMMSSZ or YYYYMMDD)
+    const formatForCalendar = (dt: string) => dt.replace(/[-:]/g, '').replace(/\..*$/, '');
+    
+    const start = formatForCalendar(event.startDateTime);
+    const end = formatForCalendar(event.endDateTime);
+    
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.speaker || '')}&location=${encodeURIComponent(event.venue)}&sf=true&output=xml`;
   }
 
   return (
@@ -251,33 +305,31 @@ function App() {
         </p>
       </div>
       {/* Minimal Calendar and Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col lg:flex-row gap-12">
         {/* Calendar Section (left) */}
-        <div className="w-full max-w-md">
+        <div className="w-full lg:max-w-md">
           <div className="flex items-center justify-between mb-2">
             <button
               className="px-2 py-1 text-sm text-blue-900 hover:bg-blue-100 rounded"
               onClick={() => {
-                if (calendarMonthIdx === 0) {
-                  setCalendarMonthIdx(11);
-                  setCalendarYear(calendarYear - 1);
-                } else {
-                  setCalendarMonthIdx(calendarMonthIdx - 1);
-                }
-                setSelectedDate(new Date(calendarYear, calendarMonthIdx === 0 ? 11 : calendarMonthIdx - 1, 1));
+                const newMonthIdx = calendarMonthIdx === 0 ? 11 : calendarMonthIdx - 1;
+                const newYear = calendarMonthIdx === 0 ? calendarYear - 1 : calendarYear;
+                setCalendarMonthIdx(newMonthIdx);
+                setCalendarYear(newYear);
+                // Reset selected date to the 1st of the new month to avoid day overflow issues
+                setSelectedDate(new Date(newYear, newMonthIdx, 1));
               }}
             >&lt;</button>
             <span className="font-semibold text-lg text-gray-900">{months[calendarMonthIdx]} {calendarYear}</span>
             <button
               className="px-2 py-1 text-sm text-blue-900 hover:bg-blue-100 rounded"
               onClick={() => {
-                if (calendarMonthIdx === 11) {
-                  setCalendarMonthIdx(0);
-                  setCalendarYear(calendarYear + 1);
-                } else {
-                  setCalendarMonthIdx(calendarMonthIdx + 1);
-                }
-                setSelectedDate(new Date(calendarYear, calendarMonthIdx === 11 ? 0 : calendarMonthIdx + 1, 1));
+                const newMonthIdx = calendarMonthIdx === 11 ? 0 : calendarMonthIdx + 1;
+                const newYear = calendarMonthIdx === 11 ? calendarYear + 1 : calendarYear;
+                setCalendarMonthIdx(newMonthIdx);
+                setCalendarYear(newYear);
+                // Reset selected date to the 1st of the new month to avoid day overflow issues
+                setSelectedDate(new Date(newYear, newMonthIdx, 1));
               }}
             >&gt;</button>
           </div>
@@ -287,32 +339,27 @@ function App() {
             ))}
             {calendarDays.map((date, idx) => {
               if (!date) return <div key={idx}></div>;
-              // Find events for this date (robust day extraction)
-              const eventsForDate = events.filter(ev => {
-                const match = ev.date.match(/(\d+)/);
-                if (!match) return false;
-                const day = Number(match[1]);
-                const [ , monthStr, yearStr ] = ev.date.split(' ');
-                const mIdx = months.indexOf(monthStr);
-                const evDate = new Date(Number(yearStr), mIdx, day);
-                return evDate.toDateString() === date.toDateString();
-              });
+              
+              const eventsForDate = getEventsForDate(date);
               const isEvent = eventsForDate.length > 0;
+              const isSelected = date.toDateString() === selectedDate.toDateString();
+              
               return (
                 <button
                   key={idx}
                   className={`h-16 w-full rounded-lg border flex flex-col items-start justify-start p-1 text-sm font-medium transition
-                    ${isEvent ? "bg-blue-100 border-blue-400 text-blue-900" : "bg-white border-gray-200 text-gray-700"}`}
+                    ${isEvent ? "bg-blue-100 border-blue-400 text-blue-900 hover:bg-blue-200" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"}
+                    ${isSelected ? "!bg-blue-900 !text-white !border-blue-900 ring-2 ring-offset-1 ring-blue-500" : ""}`}
                   onClick={() => setSelectedDate(date)}
                 >
-                  <span className="font-bold">{date.getDate()}</span>
+                  <span className={`font-bold ${isSelected ? 'text-white' : ''}`}>{date.getDate()}</span>
                   {isEvent && (
                     <span className="flex gap-1 mt-2">
                       {eventsForDate.slice(0,3).map(ev => (
-                        <span key={ev.id} className="inline-block w-2 h-2 rounded-full bg-blue-900"></span>
+                        <span key={ev.id} className={`inline-block w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-900'}`}></span>
                       ))}
                       {eventsForDate.length > 3 && (
-                        <span className="text-[10px] text-blue-900 ml-1">+{eventsForDate.length - 3}</span>
+                        <span className={`text-[10px] ${isSelected ? 'text-white' : 'text-blue-900'} ml-1`}>+{eventsForDate.length - 3}</span>
                       )}
                     </span>
                   )}
@@ -328,18 +375,15 @@ function App() {
           </h3>
           <div className="space-y-3">
             {(() => {
-              const eventsForSelected = events.filter(ev => {
-                const match = ev.date.match(/(\d+)/);
-                if (!match) return false;
-                const day = Number(match[1]);
-                const [ , monthStr, yearStr ] = ev.date.split(' ');
-                const mIdx = months.indexOf(monthStr);
-                const evDate = new Date(Number(yearStr), mIdx, day);
-                return evDate.toDateString() === selectedDate.toDateString();
-              });
+              const eventsForSelected = getEventsForDate(selectedDate);
+              
               if (eventsForSelected.length === 0) {
                 return <div className="text-gray-500">No events for this date.</div>;
               }
+              
+              // Find the event to display, preferring the selected ID, otherwise the first event
+              const eventToDisplay = eventsForSelected.find(ev => ev.id === selectedEventId) || eventsForSelected[0];
+
               return (
                 <>
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -347,7 +391,7 @@ function App() {
                       <button
                         key={ev.id}
                         className={`px-3 py-1 rounded-full border text-sm font-medium transition-colors
-                          ${selectedEventId === ev.id ? "bg-blue-900 text-white border-blue-900" : "bg-blue-50 text-blue-900 border-blue-200"}`}
+                          ${eventToDisplay.id === ev.id ? "bg-blue-900 text-white border-blue-900" : "bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100"}`}
                         onClick={() => setSelectedEventId(ev.id)}
                       >
                         {ev.title.length > 18 ? ev.title.slice(0, 15) + "..." : ev.title}
@@ -355,26 +399,26 @@ function App() {
                     ))}
                   </div>
                   {/* Event details for selected tab */}
-                  {(() => {
-                    const event = eventsForSelected.find(ev => ev.id === selectedEventId) || eventsForSelected[0];
-                    return (
-                      <div className="bg-white rounded-lg shadow p-6 border border-blue-100">
-                        <h4 className="text-2xl font-bold mb-2 text-blue-900">{event.title}</h4>
-                        <img src={event.posterUrl} alt={event.title} className="w-full h-48 object-cover rounded mb-4" />
-                        <div className="mb-2 text-gray-700"><strong>Date:</strong> {event.date}</div>
-                        <div className="mb-2 text-gray-700"><strong>Time:</strong> {event.time}</div>
-                        <div className="mb-2 text-gray-700"><strong>Venue:</strong> {event.venue}</div>
-                        {event.speaker && <div className="mb-2 text-gray-700"><strong>Speaker:</strong> {event.speaker}</div>}
-                        <div className="mb-2 text-gray-700"><strong>Category:</strong> {event.category}</div>
+                  <div className="bg-white rounded-lg shadow p-6 border border-blue-100">
+                        <h4 className="text-2xl font-bold mb-2 text-blue-900">{eventToDisplay.title}</h4>
+                        {/* Using a single placeholder image for all since only one was provided in the original imports */}
+                        <img 
+                            src={eventImage1} 
+                            alt={eventToDisplay.title} 
+                            className="w-full h-48 object-cover rounded mb-4 border border-gray-100" 
+                        />
+                        <div className="mb-2 text-gray-700"><strong>Date:</strong> {eventToDisplay.date}</div>
+                        <div className="mb-2 text-gray-700"><strong>Time:</strong> {eventToDisplay.time}</div>
+                        <div className="mb-2 text-gray-700"><strong>Venue:</strong> {eventToDisplay.venue}</div>
+                        {eventToDisplay.speaker && <div className="mb-2 text-gray-700"><strong>Speaker:</strong> {eventToDisplay.speaker}</div>}
+                        <div className="mb-2 text-gray-700"><strong>Category:</strong> {eventToDisplay.category}</div>
                         <button
                           className="mt-4 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center"
-                          onClick={() => window.open(generateGoogleCalendarUrl(event), '_blank')}
+                          onClick={() => window.open(generateGoogleCalendarUrl(eventToDisplay), '_blank')}
                         >
                           Add to Calendar
                         </button>
-                      </div>
-                    );
-                  })()}
+                  </div>
                 </>
               );
             })()}
