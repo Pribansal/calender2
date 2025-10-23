@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import eventImage1 from './assets/WhatsApp Image 2025-09-15 at 13.33.45.jpeg';
 import mainVideo from './assets/MAIN_VIDEO.mp4';
+import bosm from './assets/BOSM.jpg';
+import dataDialogues from './assets/Chap 1.jpg';
+import mindMarket from './assets/Mind, Markets.jpg';
+import resumeWorkshop from './assets/Resume Building.jpg';
+import studyCircle from './assets/Study Circle.jpg';
+import interfaceImg from './assets/Main poster.jpg';
+import inkspire from './assets/ARC.jpg';
+import enigmaticEnclave from './assets/Enigmatic Enclave Solve the Mystery.png';
+import stockStormExchange from './assets/FINOMANIAC.jpg';
+import hrImperium from './assets/HR_ IMPERIUM.png';
+import cashOrClash from './assets/ILC ClashCASH.jpg';
+import innoMun from './assets/Marketing Club Final Poster.png';
+import moneyball from './assets/MoneyBall Final Poster.png';
+import productParadox from './assets/product.png';
+
 
 interface Event {
   id: number;
@@ -37,7 +52,7 @@ function App() {
       time: "3:00 PM to 4:00 PM",
       venue: "Virtual",
       speaker: "Arjun Bhatnagar & Sudhanshu Ranjan",
-      posterUrl: "placeholder_R",
+      posterUrl: resumeWorkshop,
       category: "Workshop",
       startDateTime: "2025-08-24T15:00:00",
       endDateTime: "2025-08-24T16:00:00",
@@ -50,7 +65,7 @@ function App() {
       time: "5:00 PM to 7:00 PM",
       venue: "Virtual",
       speaker: "Kireeti Kesavamurthy",
-      posterUrl: "placeholder_D",
+      posterUrl: dataDialogues,
       category: "Speaker Session",
       startDateTime: "2025-08-28T17:00:00",
       endDateTime: "2025-08-28T19:00:00",
@@ -63,7 +78,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: undefined,
-      posterUrl: "placeholder_B",
+      posterUrl: bosm,
       category: "Festival",
       startDateTime: "2025-09-17", // Inclusive start date
       endDateTime: "2025-09-22",   // Exclusive end date
@@ -76,7 +91,7 @@ function App() {
       time: "11:30 AM to 1:30 PM",
       venue: "NAB 6163",
       speaker: "Kunal Rahar",
-      posterUrl: "placeholder_M",
+      posterUrl: mindMarket,
       category: "Seminar",
       startDateTime: "2025-09-27T11:30:00",
       endDateTime: "2025-09-27T13:30:00",
@@ -89,7 +104,7 @@ function App() {
       time: "5:00 PM to 7:00 PM",
       venue: "Virtual",
       speaker: "Students",
-      posterUrl: "placeholder_S",
+      posterUrl: studyCircle,
       category: "Study Circle",
       startDateTime: "2025-10-12T17:00:00",
       endDateTime: "2025-10-12T19:00:00",
@@ -104,7 +119,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: undefined,
-      posterUrl: "placeholder_I",
+      posterUrl: interfaceImg,
       category: "Festival",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03", // Exclusive end date
@@ -117,7 +132,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Alumini Relations Club",
-      posterUrl: "placeholder_In",
+      posterUrl: inkspire,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -130,7 +145,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Media Relations Club",
-      posterUrl: "placeholder_E",
+      posterUrl: enigmaticEnclave,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -143,7 +158,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Finance Club",
-      posterUrl: "placeholder_St",
+      posterUrl: stockStormExchange,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -156,7 +171,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "HR & Sponsorship Club",
-      posterUrl: "placeholder_H",
+      posterUrl: hrImperium,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -169,7 +184,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Industry Linkage Club",
-      posterUrl: "placeholder_C",
+      posterUrl: cashOrClash,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -182,7 +197,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Marketing Club",
-      posterUrl: "placeholder_InM",
+      posterUrl: innoMun,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -195,7 +210,7 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Operations Club",
-      posterUrl: "placeholder_M",
+      posterUrl: moneyball,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
@@ -208,38 +223,27 @@ function App() {
       time: "All Day",
       venue: "TBD",
       speaker: "Product Management Club",
-      posterUrl: "placeholder_P",
+      posterUrl: productParadox,
       category: "Competition",
       startDateTime: "2025-10-31",
       endDateTime: "2025-11-03",
     },
-    // 15. Innovision
-    {
-      id: 15,
-      title: "Innovision",
-      date: "October 31 - November 2, 2025",
-      time: "All Day",
-      venue: "TBD",
-      speaker: "E-Cell",
-      posterUrl: "placeholder_Inv",
-      category: "Competition",
-      startDateTime: "2025-10-31",
-      endDateTime: "2025-11-03",
-    },
+    
   ];
 
-  // Helper function to robustly check if a date falls within an event's range
   const isDateInRange = (event: Event, targetDate: Date) => {
-    // Standardize target date to YYYY-MM-DD for comparison
-    const targetDateString = targetDate.toISOString().split('T')[0];
+  const targetDateString = targetDate.toISOString().split('T')[0];
+  const startDateString = event.startDateTime.split('T')[0];
+  const endDateString = event.endDateTime.split('T')[0];
 
-    // Get event start and exclusive end date (YYYY-MM-DD)
-    const startDateString = event.startDateTime.split('T')[0];
-    const endDateString = event.endDateTime.split('T')[0];
-
-    // Check if target date is >= start date AND < end date (exclusive end date logic)
+  if (startDateString === endDateString) {
+    // Single-day event (with time) — include the day
+    return targetDateString === startDateString;
+  } else {
+    // Multi-day event — inclusive start, exclusive end
     return targetDateString >= startDateString && targetDateString < endDateString;
-  };
+  }
+};
 
   // Helper function to get events for a specific Date object
   const getEventsForDate = (date: Date): Event[] => {
@@ -403,10 +407,11 @@ function App() {
                         <h4 className="text-2xl font-bold mb-2 text-blue-900">{eventToDisplay.title}</h4>
                         {/* Using a single placeholder image for all since only one was provided in the original imports */}
                         <img 
-                            src={eventImage1} 
-                            alt={eventToDisplay.title} 
-                            className="w-full h-48 object-cover rounded mb-4 border border-gray-100" 
-                        />
+                              src={eventToDisplay.posterUrl} 
+                              alt={eventToDisplay.title} 
+                              className="w-full h-48 object-cover rounded mb-4 border border-gray-100" 
+                         />
+
                         <div className="mb-2 text-gray-700"><strong>Date:</strong> {eventToDisplay.date}</div>
                         <div className="mb-2 text-gray-700"><strong>Time:</strong> {eventToDisplay.time}</div>
                         <div className="mb-2 text-gray-700"><strong>Venue:</strong> {eventToDisplay.venue}</div>
